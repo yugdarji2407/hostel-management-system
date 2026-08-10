@@ -1,0 +1,17 @@
+{
+  "name": "hostel-backend",
+  "version": "1.0.0",
+  "description": "Hostel Management System backend API — Node.js + Postgres (Supabase), minimal dependencies",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "seed": "node --env-file-if-exists=.env src/db.js --seed"
+  },
+  "dependencies": {
+    "pg": "^8.13.0"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
