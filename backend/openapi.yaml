@@ -1,0 +1,58 @@
+openapi: 3.1.0
+info:
+  title: KSV Hostel Student Portal API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: ksv_session
+  schemas:
+    Success:
+      type: object
+      properties: {success:{type:boolean},data:{type:object},meta:{type:object},requestId:{type:string}}
+    Error:
+      type: object
+      properties: {success:{type:boolean},error:{type:object},requestId:{type:string}}
+security: [{sessionCookie: []}]
+paths:
+  /auth/login:
+    post:
+      security: []
+      summary: Login or create a pending device request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type:object,required:[email,password],properties:{email:{type:string},password:{type:string},rememberDevice:{type:boolean}}}
+      responses: {'200':{description:Authenticated},'202':{description:Device approval required},'401':{description:Invalid credentials},'423':{description:Locked}}
+  /auth/logout: {post:{summary:Logout current session,responses:{'200':{description:OK}}}}
+  /auth/logout-all: {post:{summary:Revoke all sessions,responses:{'200':{description:OK}}}}
+  /auth/me: {get:{summary:Current authenticated user,responses:{'200':{description:OK}}}}
+  /student/dashboard: {get:{summary:Student dashboard,responses:{'200':{description:OK}}}}
+  /student/profile: {get:{summary:Student profile,responses:{'200':{description:OK}}}}
+  /student/id-card: {get:{summary:Digital ID card,responses:{'200':{description:OK}}}}
+  /student/qr: {get:{summary:Generate short-lived QR,responses:{'200':{description:OK}}}}
+  /student/attendance: {get:{summary:Attendance history,responses:{'200':{description:OK}}}}
+  /qr/verify: {post:{summary:Verify QR, responses:{'200':{description:Verified},'410':{description:Invalid or expired}}}}
+  /attendance/mark: {post:{summary:Mark attendance by authorized staff,responses:{'200':{description:Marked},'409':{description:Duplicate}}}}
+  /menu: {get:{summary:Published mess menu,responses:{'200':{description:OK}}}}
+  /bills: {get:{summary:Own issued bills,responses:{'200':{description:OK}}}}
+  /receipts: {get:{summary:Own receipts and totals,responses:{'200':{description:OK}}}}
+  /vehicles: {get:{summary:Own vehicles,responses:{'200':{description:OK}}},post:{summary:Register vehicle,responses:{'201':{description:Created}}}}
+  /cancellation: {get:{summary:Own cancellation requests,responses:{'200':{description:OK}}},post:{summary:Submit cancellation,responses:{'201':{description:Created}}}}
+  /complaints: {get:{summary:Own complaints,responses:{'200':{description:OK}}},post:{summary:Create complaint,responses:{'201':{description:Created}}}}
+  /applications: {get:{summary:Own applications,responses:{'200':{description:OK}}},post:{summary:Create application,responses:{'201':{description:Created}}}}
+  /passes: {get:{summary:Own passes,responses:{'200':{description:OK}}},post:{summary:Create pass,responses:{'201':{description:Created}}}}
+  /notifications: {get:{summary:Own notifications,responses:{'200':{description:OK}}}}
+  /settings: {get:{summary:User settings,responses:{'200':{description:OK}}},patch:{summary:Update settings,responses:{'200':{description:OK}}}}
+  /devices: {get:{summary:Own devices,responses:{'200':{description:OK}}}}
+  /devices/pending: {get:{summary:Pending login requests,responses:{'200':{description:OK}}}}
+  /devices/{deviceId}/approve: {post:{summary:Approve a pending device,responses:{'200':{description:OK},'409':{description:Device limit}}}}
+  /devices/{deviceId}/reject: {post:{summary:Reject pending device,responses:{'200':{description:OK}}}}
+  /devices/{deviceId}/revoke: {post:{summary:Revoke own non-current device,responses:{'200':{description:OK}}}}
+  /admin/students: {get:{summary:List students,responses:{'200':{description:OK}}},post:{summary:Create student,responses:{'201':{description:Created}}}}
+  /admin/cancellations/{id}/approve: {post:{summary:Approve cancellation,responses:{'200':{description:OK}}}}

@@ -1,0 +1,3 @@
+import {prisma} from '../lib/prisma.js';
+export async function getStudentByUser(userId:string){return prisma.student.findUnique({where:{userId},include:{college:true,parent:true,hostel:true,room:true,bed:true}})}
+export function serializeStudent(s:any){return {publicId:s.publicId,name:s.name,enrollmentId:s.enrollmentId,phone:s.phone,email:s.emailDisplay,college:s.college?{name:s.college.name}:null,course:s.course,semester:s.semester,parent:s.parent?{name:s.parent.name,phone:s.parent.phone}:null,hostel:s.hostel?{name:s.hostel.name}:null,room:s.room?{number:s.room.roomNumber}:null,bed:s.bed?{label:s.bed.label}:null,academicYear:s.academicYear,status:s.status,photoUrl:s.photoUrl,idCard:{printAllowed:s.idCardPrintAllowed,downloadAllowed:s.idCardDownloadAllowed}}}

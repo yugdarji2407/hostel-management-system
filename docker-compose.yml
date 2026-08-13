@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ksv
+      POSTGRES_PASSWORD: ksv
+      POSTGRES_DB: ksv_hostel
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U ksv -d ksv_hostel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  worker:
+    build: ./backend
+    command: ["node","dist/jobs/worker.js"]
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://ksv:ksv@postgres:5432/ksv_hostel?schema=public
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: change-this-development-secret-to-32-characters
+      QR_TOKEN_SECRET: change-this-development-qr-secret-to-32-characters
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  api:
+    build: ./backend
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://ksv:ksv@postgres:5432/ksv_hostel?schema=public
+      FRONTEND_URL: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173
+      SESSION_COOKIE_NAME: ksv_session
+      SESSION_SECRET: change-this-development-secret-to-32-characters
+      QR_TOKEN_SECRET: change-this-development-qr-secret-to-32-characters
+      REDIS_URL: redis://redis:6379
+      TRUST_PROXY: "false"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-KSV Hostel}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+      TWILIO_MESSAGING_SERVICE_SID: ${TWILIO_MESSAGING_SERVICE_SID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports: ["4000:4000"]
+volumes:
+  pgdata:

@@ -1,0 +1,3 @@
+import type {Request,Response,NextFunction} from 'express';import {env,corsOrigins} from '../config/env.js';
+export function originGuard(req:Request,res:Response,next:NextFunction){if(['GET','HEAD','OPTIONS'].includes(req.method))return next();const origin=req.header('origin');if(origin && !corsOrigins.includes(origin))return res.status(403).json({success:false,error:{code:'AUTH_FORBIDDEN',message:'Origin not allowed',details:[]},requestId:res.locals.requestId});next();}
+export function cookieOptions(){return {httpOnly:true,secure:env.NODE_ENV==='production',sameSite:env.COOKIE_SAME_SITE,path:'/'};}

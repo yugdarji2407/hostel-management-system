@@ -1,0 +1,980 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  RECTOR
+  SECURITY
+  ADMIN
+}
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  LOCKED
+  DISABLED
+  PENDING
+}
+enum StudentStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  CANCEL_PENDING
+  CANCELLED
+  GRADUATED
+  INACTIVE
+}
+enum AllocationStatus {
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+enum RoomStatus {
+  AVAILABLE
+  PARTIAL
+  FULL
+  MAINTENANCE
+  INACTIVE
+}
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+  INACTIVE
+}
+enum DeviceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+  BLOCKED
+}
+enum LoginRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+enum QRPurpose {
+  ID_VERIFY
+  ATTENDANCE
+}
+enum QRStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  REVOKED
+}
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  EXCUSED
+}
+enum AttendanceSource {
+  QR
+  ADMIN
+  RECTOR
+  SECURITY
+  SYSTEM
+}
+enum BillStatus {
+  DRAFT
+  ISSUED
+  CANCELLED
+  CLOSED
+}
+enum PaymentStatus {
+  PENDING
+  PAID
+  WAIVED
+  OVERDUE
+}
+enum CalculationMethod {
+  EQUAL
+  CUSTOM
+  SEAT_WEIGHTED
+  METER_BASED
+}
+enum ReceiptStatus {
+  ISSUED
+  CANCELLED
+  REVERSED
+}
+enum FeeType {
+  RESIDENTIAL
+  MESS
+  OTHER
+}
+enum VehicleType {
+  BIKE
+  MOTORCYCLE
+  SCOOTER
+  CAR
+  OTHER
+}
+enum VehicleStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BLOCKED
+}
+enum CancellationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum RefundStatus {
+  NOT_APPLICABLE
+  PENDING
+  PARTIAL
+  COMPLETED
+  FAILED
+}
+enum ComplaintCategory {
+  ROOM
+  ELECTRICITY
+  MESS
+  WATER
+  CLEANING
+  SECURITY
+  MAINTENANCE
+  OTHER
+}
+enum ComplaintStatus {
+  SUBMITTED
+  IN_REVIEW
+  ASSIGNED
+  RESOLVED
+  REJECTED
+}
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+enum ApplicationType {
+  HOSTEL_ADMISSION
+  ROOM_CHANGE
+  LEAVE_OUTPASS
+  VEHICLE_REGISTRATION
+  HOSTEL_CANCELLATION
+  COMPLAINT
+  OTHER
+}
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+enum PassType {
+  OUTPASS
+  LEAVE
+  WEEKEND
+  EMERGENCY
+}
+enum PassStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+enum NotificationType {
+  SECURITY
+  FEE
+  BILL
+  ATTENDANCE
+  APPLICATION
+  COMPLAINT
+  GENERAL
+  MENU
+  PASS
+  VEHICLE
+  CANCELLATION
+}
+enum SessionEvent {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGIN_PENDING
+  DEVICE_APPROVED
+  DEVICE_REJECTED
+  LOGOUT
+  LOGOUT_ALL
+  SESSION_EXPIRED
+  SESSION_REVOKED
+  PASSWORD_CHANGED
+  ACCOUNT_LOCKED
+}
+enum OtpPurpose {
+  LOGIN
+  REGISTRATION
+  PASSWORD_RESET
+  VERIFICATION
+}
+enum OtpDeliveryMethod {
+  EMAIL
+  SMS
+}
+enum OtpStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  INVALIDATED
+  BLOCKED
+  DELIVERY_FAILED
+}
+
+model User {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  email String
+  normalizedEmail String @unique
+  passwordHash String
+  role Role
+  status UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  lastLoginAt DateTime?
+  lastPasswordChangedAt DateTime?
+  failedLoginAttempts Int @default(0)
+  lockedUntil DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student?
+  devices Device[]
+  sessions Session[]
+  loginRequests LoginRequest[]
+  loginHistory LoginHistory[]
+  notifications Notification[]
+  settings UserSettings?
+  auditLogs AuditLog[]
+  securityEvents SecurityEvent[]
+  staffAssignments StaffHostelAssignment[]
+  passwordResetTokens PasswordResetToken[]
+  otpCodes OtpVerification[]
+  loginChallenges LoginChallenge[]
+  announcementsCreated Announcement[] @relation("AnnouncementCreatedBy")
+  announcementsUpdated Announcement[] @relation("AnnouncementUpdatedBy")
+ 
+  @@index([role,status])
+  @@index([normalizedEmail,status])
+}
+model Parent {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  name String
+  phone String
+  email String?
+  relationship String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  students Student[]
+}
+model College {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  name String
+  code String? @unique
+  address String?
+  city String?
+  state String?
+  country String?
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  students Student[]
+}
+model Hostel {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  name String
+  code String? @unique
+  address String?
+  contactPhone String?
+  contactEmail String?
+  timezone String @default("Asia/Kolkata")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rooms Room[]
+  allocations HostelAllocation[]
+  students Student[]
+  bills LightBill[]
+  menuWeeks MessMenuWeek[]
+  assignments StaffHostelAssignment[]
+}
+model Room {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  hostelId String
+  roomNumber String
+  floor String?
+  block String?
+  capacity Int
+  status RoomStatus @default(AVAILABLE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hostel Hostel @relation(fields:[hostelId],references:[id])
+  beds Bed[]
+  students Student[]
+  allocations HostelAllocation[]
+  bills LightBill[]
+  @@unique([hostelId,roomNumber])
+  @@index([hostelId,status])
+}
+model Bed {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  roomId String
+  bedNumber String
+  label String
+  status BedStatus @default(AVAILABLE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  room Room @relation(fields:[roomId],references:[id])
+  students Student[]
+  allocations HostelAllocation[]
+  billShares LightBillShare[]
+  @@unique([roomId,bedNumber])
+  @@index([roomId,status])
+}
+model Student {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String @unique
+  enrollmentId String @unique
+  name String
+  phone String
+  emailDisplay String?
+  photoUrl String?
+  collegeId String
+  course String?
+  semester Int
+  parentId String?
+  hostelId String?
+  roomId String?
+  bedId String?
+  academicYear String
+  admissionDate DateTime?
+  status StudentStatus @default(ACTIVE)
+  idCardPrintAllowed Boolean @default(false)
+  idCardDownloadAllowed Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id])
+  parent Parent? @relation(fields:[parentId],references:[id])
+  college College @relation(fields:[collegeId],references:[id])
+  hostel Hostel? @relation(fields:[hostelId],references:[id])
+  room Room? @relation(fields:[roomId],references:[id])
+  bed Bed? @relation(fields:[bedId],references:[id])
+  allocations HostelAllocation[]
+  vehicles Vehicle[]
+  attendance Attendance[]
+  receipts FeeReceipt[]
+  bills LightBillShare[]
+  complaints Complaint[]
+  applications Application[]
+  passes Pass[]
+  qrTokens QRToken[]
+  cancellations CancellationRequest[]
+  corrections AttendanceCorrection[]
+  fees Fee[]
+  otpCodes OtpVerification[]
+
+  @@index([hostelId,roomId,status])
+}
+model HostelAllocation {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  hostelId String
+  roomId String
+  bedId String
+  startDate DateTime
+  endDate DateTime?
+  status AllocationStatus @default(ACTIVE)
+  assignedBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  hostel Hostel @relation(fields:[hostelId],references:[id])
+  room Room @relation(fields:[roomId],references:[id])
+  bed Bed @relation(fields:[bedId],references:[id])
+  @@index([studentId,status])
+  @@index([bedId,status])
+  @@index([roomId,status])
+}
+model Fee {
+  id String @id @default(uuid())
+  studentId String
+  type FeeType
+  academicYear String
+  amount Decimal @db.Decimal(12,2)
+  status String
+  dueDate DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+}
+model FeeReceipt {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  receiptNumber String @unique
+  studentId String
+  academicYear String
+  receiptDate DateTime
+  totalAmount Decimal @db.Decimal(12,2)
+  paymentMethod String
+  status ReceiptStatus @default(ISSUED)
+  issuedBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  lineItems FeeReceiptLineItem[]
+  @@index([studentId,receiptDate])
+}
+model FeeReceiptLineItem {
+  id String @id @default(uuid())
+  receiptId String
+  feeType FeeType
+  description String
+  amount Decimal @db.Decimal(12,2)
+  receipt FeeReceipt @relation(fields:[receiptId],references:[id])
+}
+model LightBill {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  hostelId String
+  roomId String
+  billingMonth Int
+  billingYear Int
+  totalRoomAmount Decimal @db.Decimal(12,2)
+  occupantCountSnapshot Int
+  calculationMethod CalculationMethod
+  dueDate DateTime
+  status BillStatus @default(DRAFT)
+  generatedBy String
+  generatedAt DateTime @default(now())
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hostel Hostel @relation(fields:[hostelId],references:[id])
+  room Room @relation(fields:[roomId],references:[id])
+  shares LightBillShare[]
+  @@index([hostelId,roomId,billingYear,billingMonth])
+}
+model LightBillShare {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  billId String
+  studentId String
+  bedId String?
+  allocatedAmount Decimal @db.Decimal(12,2)
+  paymentStatus PaymentStatus @default(PENDING)
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bill LightBill @relation(fields:[billId],references:[id])
+  student Student @relation(fields:[studentId],references:[id])
+  bed Bed? @relation(fields:[bedId],references:[id])
+  @@unique([billId,studentId])
+  @@index([studentId,paymentStatus])
+}
+model MessMenuWeek {
+  id String @id @default(uuid())
+  hostelId String
+  weekStartDate DateTime
+  weekEndDate DateTime
+  status String @default("DRAFT")
+  createdBy String
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hostel Hostel @relation(fields:[hostelId],references:[id])
+  days MessMenuDay[]
+}
+model MessMenuDay {
+  id String @id @default(uuid())
+  weekId String
+  date DateTime
+  dayOfWeek Int
+  specialNote String?
+  week MessMenuWeek @relation(fields:[weekId],references:[id])
+  meals MessMeal[]
+  @@unique([weekId,date])
+}
+model MessMeal {
+  id String @id @default(uuid())
+  dayId String
+  type String
+  startTime String
+  endTime String
+  title String?
+  notes String?
+  day MessMenuDay @relation(fields:[dayId],references:[id])
+  items MessMealItem[]
+}
+model MessMealItem {
+  id String @id @default(uuid())
+  mealId String
+  name String
+  sortOrder Int @default(0)
+  isAvailable Boolean @default(true)
+  meal MessMeal @relation(fields:[mealId],references:[id])
+}
+model Attendance {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  attendanceDate DateTime @db.Date
+  status AttendanceStatus
+  markedByUserId String
+  markedByRole Role
+  qrTokenId String? @unique
+  markedAt DateTime
+  source AttendanceSource
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  qrToken QRToken? @relation(fields:[qrTokenId],references:[id])
+  corrections AttendanceCorrection[]
+  @@unique([studentId,attendanceDate])
+  @@index([studentId,markedAt])
+}
+model AttendanceCorrection {
+  id String @id @default(uuid())
+  attendanceId String
+  oldStatus AttendanceStatus
+  newStatus AttendanceStatus
+  reason String
+  changedBy String
+  changedAt DateTime @default(now())
+  attendance Attendance @relation(fields:[attendanceId],references:[id])
+  studentId String
+  student Student @relation(fields:[studentId],references:[id])
+}
+model Vehicle {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  vehicleUniqueId String @unique
+  vehicleNumber String
+  normalizedVehicleNumber String
+  vehicleType VehicleType
+  ownerNameSnapshot String
+  status VehicleStatus @default(PENDING)
+  verified Boolean @default(false)
+  verifiedBy String?
+  verifiedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  @@index([studentId,status])
+  @@index([normalizedVehicleNumber])
+}
+model CancellationRequest {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  studentNameSnapshot String
+  mobileSnapshot String
+  collegeNameSnapshot String
+  semester Int
+  fatherNameSnapshot String
+  requestedDate DateTime
+  address String
+  reason String
+  termsAccepted Boolean
+  status CancellationStatus @default(PENDING)
+  submittedAt DateTime @default(now())
+  reviewedAt DateTime?
+  reviewedBy String?
+  rejectionReason String?
+  refundStatus RefundStatus @default(NOT_APPLICABLE)
+  approvedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  @@index([studentId,status])
+}
+model Complaint {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  hostelId String?
+  roomId String?
+  category ComplaintCategory
+  subject String
+  description String
+  status ComplaintStatus @default(SUBMITTED)
+  priority Priority @default(MEDIUM)
+  assignedTo String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+  rejectedAt DateTime?
+  student Student @relation(fields:[studentId],references:[id])
+  attachments ComplaintAttachment[]
+  history ComplaintStatusHistory[]
+  @@index([studentId,status])
+}
+model ComplaintAttachment {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  complaintId String
+  storageKey String
+  originalName String
+  mimeType String
+  size Int
+  checksum String
+  uploadedBy String
+  createdAt DateTime @default(now())
+  complaint Complaint @relation(fields:[complaintId],references:[id])
+}
+model ComplaintStatusHistory {
+  id String @id @default(uuid())
+  complaintId String
+  fromStatus ComplaintStatus?
+  toStatus ComplaintStatus
+  actor String
+  note String?
+  createdAt DateTime @default(now())
+  complaint Complaint @relation(fields:[complaintId],references:[id])
+}
+model Application {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  type ApplicationType
+  title String
+  description String
+  payload Json
+  status ApplicationStatus @default(DRAFT)
+  submittedAt DateTime?
+  reviewedAt DateTime?
+  reviewedBy String?
+  rejectionReason String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  history ApplicationStatusHistory[]
+  @@index([studentId,status])
+}
+model ApplicationStatusHistory {
+  id String @id @default(uuid())
+  applicationId String
+  fromStatus ApplicationStatus?
+  toStatus ApplicationStatus
+  actor String
+  note String?
+  createdAt DateTime @default(now())
+  application Application @relation(fields:[applicationId],references:[id])
+}
+model Pass {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  studentId String
+  hostelId String
+  type PassType
+  fromDateTime DateTime
+  toDateTime DateTime
+  purpose String
+  status PassStatus @default(DRAFT)
+  approvedBy String?
+  approvedAt DateTime?
+  rejectedBy String?
+  rejectedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  student Student @relation(fields:[studentId],references:[id])
+  @@index([studentId,status,fromDateTime])
+}
+model Device {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String
+  serverDeviceId String @unique
+  deviceName String
+  os String
+  browser String
+  browserVersion String?
+  platform String?
+  ipAddress String
+  country String?
+  city String?
+  userAgentHash String
+  status DeviceStatus @default(PENDING)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  approvedAt DateTime?
+  approvedBy String?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id])
+  sessions Session[]
+  loginRequests LoginRequest[]
+  loginChallenges LoginChallenge[]
+  statusHistory DeviceStatusHistory[]
+  @@index([userId,status])
+  @@index([serverDeviceId,status])
+}
+model DeviceStatusHistory {
+  id String @id @default(uuid())
+  deviceId String
+  fromStatus DeviceStatus?
+  toStatus DeviceStatus
+  actor String?
+  reason String?
+  createdAt DateTime @default(now())
+  device Device @relation(fields:[deviceId],references:[id])
+}
+model LoginRequest {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String
+  deviceId String
+  status LoginRequestStatus @default(PENDING)
+  ipAddress String
+  userAgent String?
+  location String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  reviewedAt DateTime?
+  reviewedBy String?
+  rejectionReason String?
+  sessionIssuedAt DateTime?
+  pollTokenHash String?
+  user User @relation(fields:[userId],references:[id])
+  device Device @relation(fields:[deviceId],references:[id])
+  @@index([userId,status,expiresAt])
+}
+model Session {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String
+  deviceId String
+  tokenHash String @unique
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  ipAddress String
+  userAgent String?
+  remembered Boolean @default(false)
+  reason String?
+  user User @relation(fields:[userId],references:[id])
+  device Device @relation(fields:[deviceId],references:[id])
+  @@index([userId,expiresAt,revokedAt])
+}
+model LoginHistory {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String
+  deviceId String?
+  event SessionEvent
+  status String
+  ipAddress String
+  userAgent String?
+  location String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId],references:[id])
+  @@index([userId,createdAt])
+}
+model QRToken {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  tokenHash String @unique
+  studentId String
+  purpose QRPurpose
+  issuedAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt DateTime?
+  revokedAt DateTime?
+  status QRStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  student Student @relation(fields:[studentId],references:[id])
+  attendance Attendance?
+  @@index([studentId,purpose,status,expiresAt])
+}
+model LoginChallenge {
+  id String @id @default(uuid())
+  tokenHash String @unique
+  userId String
+  deviceId String?
+  expiresAt DateTime
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId],references:[id])
+  device Device? @relation(fields:[deviceId],references:[id])
+  @@index([userId,expiresAt,completedAt])
+}
+
+model Announcement {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  title String
+  message String
+  createdBy String
+  updatedBy String?
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  creator User @relation("AnnouncementCreatedBy",fields:[createdBy],references:[id])
+  updater User? @relation("AnnouncementUpdatedBy",fields:[updatedBy],references:[id])
+  @@index([active,createdAt])
+}
+
+model Notification {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String
+  type NotificationType
+  title String
+  message String
+  data Json?
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+  user User @relation(fields:[userId],references:[id])
+  @@index([userId,readAt,createdAt])
+}
+model PasswordResetToken {
+  id String @id @default(uuid())
+  userId String
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId],references:[id])
+  @@index([userId,expiresAt])
+}
+model OtpVerification {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  userId String
+  studentId String?
+  purpose OtpPurpose
+  deliveryMethod OtpDeliveryMethod
+  recipient String
+  otpHash String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt DateTime?
+  invalidatedAt DateTime?
+  attempts Int @default(0)
+  maxAttempts Int @default(5)
+  resendAvailableAt DateTime
+  lastSentAt DateTime @default(now())
+  status OtpStatus @default(ACTIVE)
+  ipAddress String?
+  userAgent String?
+  failureReason String?
+  user User @relation(fields:[userId],references:[id])
+  student Student? @relation(fields:[studentId],references:[id])
+  @@index([userId,purpose,deliveryMethod,status,expiresAt])
+  @@index([recipient,purpose,deliveryMethod,status,createdAt])
+  @@index([expiresAt,status])
+}
+model UserSettings {
+  id String @id @default(uuid())
+  userId String @unique
+  language String @default("en")
+  timezone String @default("Asia/Kolkata")
+  emailNotifications Boolean @default(true)
+  securityNotifications Boolean @default(true)
+  applicationNotifications Boolean @default(true)
+  billNotifications Boolean @default(true)
+  messNotifications Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields:[userId],references:[id])
+}
+model AuditLog {
+  id String @id @default(uuid())
+  publicId String @unique @default(uuid())
+  actorUserId String?
+  actorRole Role?
+  action String
+  entityType String?
+  entityId String?
+  targetUserId String?
+  ipAddress String?
+  userAgent String?
+  requestId String?
+  success Boolean @default(true)
+  reason String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  user User? @relation(fields:[actorUserId],references:[id])
+  @@index([actorUserId,createdAt])
+  @@index([action,createdAt])
+  @@index([targetUserId,createdAt])
+}
+model SecurityEvent {
+  id String @id @default(uuid())
+  userId String?
+  type String
+  severity String
+  ip String?
+  deviceId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  resolvedAt DateTime?
+  user User? @relation(fields:[userId],references:[id])
+}
+model StaffHostelAssignment {
+  id String @id @default(uuid())
+  userId String
+  hostelId String
+  role Role
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId],references:[id])
+  hostel Hostel @relation(fields:[hostelId],references:[id])
+  @@unique([userId,hostelId,role])
+}
+model IdempotencyKey {
+  id String @id @default(uuid())
+  userId String
+  endpoint String
+  key String
+  requestHash String
+  response Json?
+  status Int?
+  createdAt DateTime @default(now())
+  expiresAt DateTime @default(dbgenerated("now() + interval '24 hours'"))
+  @@unique([userId,endpoint,key])
+}
+model OutboxEvent {
+  id String @id @default(uuid())
+  type String
+  aggregateType String
+  aggregateId String
+  payload Json
+  status String @default("PENDING")
+  attempts Int @default(0)
+  availableAt DateTime @default(now())
+  processedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([status,availableAt])
+}
+model SystemSetting {
+  id String @id @default(uuid())
+  key String @unique
+  value Json
+  updatedAt DateTime @updatedAt
+}
+
+

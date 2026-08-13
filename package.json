@@ -1,0 +1,24 @@
+{
+  "name": "ksv-hostel-student-portal",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "build": "npm --workspace backend run build && npm --workspace frontend run build",
+    "test": "npm --workspace backend test",
+    "prisma:generate": "npm --workspace backend run prisma:generate",
+    "prisma:migrate": "npm --workspace backend run prisma:migrate",
+    "prisma:db:push": "npm --workspace backend run prisma:db:push",
+    "seed": "npm --workspace backend run seed",
+    "check:integration": "node scripts/check-integration.mjs",
+    "check:otp": "node scripts/check-otp-integration.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
