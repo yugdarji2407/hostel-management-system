@@ -22,7 +22,7 @@ r.post('/login',async(req,res,next)=>{try{
  if(result.kind==='device_rejected')return fail(res,403,'AUTH_DEVICE_REJECTED','This device is not allowed');
  if(result.kind==='otp_required'){
   if(!result.user)return fail(res,500,'AUTH_ERROR','Authentication user data is unavailable');
-  res.cookie(env.LOGIN_CHALLENGE_COOKIE_NAME,result.challengeToken,{httpOnly:true,secure:env.NODE_ENV==='production',sameSite:env.COOKIE_SAME_SITE,path:'/',maxAge:10*60*1000});
+  res.cookie(env.LOGIN_CHALLENGE_COOKIE_NAME,result.challengeToken,{...cookieOptions(),maxAge:10*60*1000});
   return ok(res,{status:'OTP_REQUIRED',role:result.user.role,email:result.user.email,phone:result.user.student?.phone||null});
 }
  return fail(res,500,'AUTH_ERROR','Unexpected authentication result');

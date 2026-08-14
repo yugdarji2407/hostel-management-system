@@ -18,7 +18,10 @@ import adminFinanceRoutes from './routes/admin.finance.routes.js';
 import staffRoutes from './routes/staff.routes.js';
 
 export const app = express();
-app.set('trust proxy', env.TRUST_PROXY === 'true' ? 1 : 0);
+const trustProxy =
+  env.NODE_ENV === 'production' ||
+  ['true', '1', 'yes'].includes(env.TRUST_PROXY.toLowerCase());
+app.set('trust proxy', trustProxy ? 1 : 0);
 app.use(helmet());
 app.use(cors({
   origin: (origin, cb) => {

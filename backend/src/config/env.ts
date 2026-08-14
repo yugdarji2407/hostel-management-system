@@ -12,5 +12,8 @@ if((config.ADMIN_EMAIL && !config.ADMIN_PASSWORD) || (!config.ADMIN_EMAIL && con
 if(config.NODE_ENV==='production' && (!config.ADMIN_EMAIL || !config.ADMIN_PASSWORD)){
   throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required in production.');
 }
+if(config.NODE_ENV==='production' && config.COOKIE_SAME_SITE!=='none'){
+  throw new Error('COOKIE_SAME_SITE must be "none" in production for cross-origin cookie auth.');
+}
 export const env=config;
 export const corsOrigins=env.CORS_ORIGINS.split(',').map(s=>s.trim()).filter(Boolean);
