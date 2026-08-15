@@ -19,7 +19,7 @@ export async function createSessionForApproved(userId:string,deviceId:string,ip:
 
 export async function getLoginChallenge(rawToken:string){
   if(!rawToken) return null;
-  return prisma.loginChallenge.findFirst({where:{tokenHash:sha256(rawToken),completedAt:null,expiresAt:{gt:new Date()}},include:{user:true,device:true}});
+  return prisma.loginChallenge.findFirst({where:{tokenHash:sha256(rawToken),completedAt:null,expiresAt:{gt:new Date()}},include:{user:{include:{student:true}},device:true}});
 }
 export async function completeLoginChallenge(rawToken:string,input:{ip:string;userAgent?:string;rememberDevice?:boolean}){
   const challenge=await getLoginChallenge(rawToken);
